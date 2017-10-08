@@ -66,7 +66,13 @@ int shell_exit(char ** args){
  * return: status 1 to indicate successful termination
  */
 int shell_help(char ** args){
-	printf("\nA mini implementation of the Unix Shell by Ashwitha Yadav T.\n\n");
+	printf("\nA mini implementation of the Unix Shell by Ashwitha Yadav T.\n");
+	printf("\nCommands implemented: ");
+	printf("\n\t- help");
+	printf("\n\t- exit");
+	printf("\n\t- cd");
+	printf("\n\t- pwd");
+	printf("\n\n");
 	return 1;
 }
 
@@ -223,9 +229,13 @@ int shell_execute(char ** args){
  *  main loop of the Mini-Shell
  */
 void shell_loop(void){
+
+	// Display help at startup
+	int status = shell_help(NULL);
+
         char * command_line;
         char ** arguments;
-        int status = 1;
+	status = 1;
 
         while (status){
                 printf("minsh> ");
