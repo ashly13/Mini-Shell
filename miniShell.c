@@ -8,16 +8,22 @@
 
 #include <stdio.h>	// For: printf(), fprintf(), getchar(), perror(), stderr
 #include <stdlib.h>     // For: malloc(), realloc(), free(), exit(), execvp(), EXIT_SUCCESS, EXIT_FAILURE
-#include <string.h>     // For: strtok(), strcmp()
-#include <unistd.h>     // For: chdir(), fork(), exec(), pid_t
+#include <string.h>     // For: strtok(), strcmp(), strcat(), strcpy()
+#include <unistd.h>     // For: chdir(), fork(), exec(), pid_t, getcwd()
 #include <sys/wait.h>	// For: waitpid()
 
-#define BUILTIN_COMMANDS 3	// Number of builtin commands defined
+#define BUILTIN_COMMANDS 4	// Number of builtin commands defined
+
+/*
+ * Environment variables
+ */
+char PWD[1024];		// Present Working Directory
+char PATH[1024];	// Path to find the commands
 
 /*
  * Built-in command names
  */
-char * builtin[] = {"cd", "exit", "help"};
+char * builtin[] = {"cd", "exit", "help", "pwd"};
 
 /*
  * Built-in command functions
@@ -27,7 +33,7 @@ char * builtin[] = {"cd", "exit", "help"};
  * Function:  shell_cd
  * -------------------
  *  changes current working directory
- * 
+ *
  * args: arguments to the cd command, will consider only the first argument after the command name
  */
 int shell_cd(char ** args){
@@ -37,6 +43,7 @@ int shell_cd(char ** args){
 	else if (chdir(args[1]) < 0){
 		perror("minsh");
 	}
+	getcwd(PWD, sizeof(PWD));	// Update present working directory
 	return 1;
 }
 
@@ -64,22 +71,37 @@ int shell_help(char ** args){
 }
 
 /*
+ * Function:  shell_pwd
+ * ---------------------
+ *  prints the present working directory
+ *
+ * return: status 1 to indicate successful termination
+ */
+int shell_pwd(char ** args){
+	printf("%s\n", PWD);
+	return 1;
+}
+
+
+/*
  * Array of function pointers to built-in command functions
  */
 int (* builtin_function[]) (char **) = {
 	&shell_cd,
 	&shell_exit,
-	&shell_help
+	&shell_help,
+	&shell_pwd
 };
+
 
 /*
  * Function:  split_command_line
  * -----------------------------
  *  splits a commandline into tokens using strtok()
  *
- *  command: a line of command read from terminal
+ * command: a line of command read from terminal
  *
- *  returns: an array of pointers to individual tokens
+ * returns: an array of pointers to individual tokens
  */
 char ** split_command_line(char * command){
         int position = 0;
@@ -92,11 +114,9 @@ char ** split_command_line(char * command){
         while (token != NULL){
                 tokens[position] = token;
                 position++;
-                //printf("\n\t%s", token);
                 token = strtok(NULL, delim);
         }
         tokens[position] = NULL;
-        //printf("\n");
         return tokens;
 }
 
@@ -105,7 +125,7 @@ char ** split_command_line(char * command){
  * ----------------------------
  *  reads a commandline from terminal
  *
- *  returns: a line of command read from terminal
+ * returns: a line of command read from terminal
  */
 char * read_command_line(void){
         int position = 0;
@@ -132,8 +152,8 @@ char * read_command_line(void){
 
 /*
  * Function:  start_process
- * -----------------------
- * starts and executes a process for a command
+ * ------------------------
+ *  starts and executes a process for a command
  *
  * args: arguments tokenized from the command line
  *
@@ -146,15 +166,22 @@ int start_process(char ** args){
         pid = fork();
 
         if (pid == 0){  // It's the child process
-                printf("\nChild Process");
-                // Execute the required process
-
+		
+		// Find the path of the command
+		char cmd_dir[1024];
+		strcpy(cmd_dir, PATH);
+		strcat(cmd_dir, args[0]);
+		
+		// Execute the required process		
+		if ( execv( cmd_dir, args ) == -1){ // Error
+			printf("minsh: Command not found\n");
+		}
+		exit(EXIT_FAILURE);	// To exit from child process
         }
         else if (pid < 0){      // Error in forking
 		perror("minsh");
         }
         else{           // It's the parent process
-                printf("\nParent Process!");
                 do{
                         wpid = waitpid(pid, &status, WUNTRACED);
                 } while (!WIFEXITED(status) && !WIFSIGNALED(status));
@@ -162,8 +189,17 @@ int start_process(char ** args){
         return 1;
 }
 
+/*
+ * Function:  shell_execute
+ * ------------------------
+ *  determines and executes a command as a built-in command or an external command
+ *
+ * args: arguments tokenized from the command line
+ *
+ * return: return status of the command
+ */
 int shell_execute(char ** args){
-	
+
 	if (args[0] == NULL){	// Empty command
 		return 1;
 	}
@@ -191,7 +227,7 @@ void shell_loop(void){
         char ** arguments;
         int status = 1;
 
-        while (status == 1){
+        while (status){
                 printf("minsh> ");
                 command_line = read_command_line();
 		if ( strcmp(command_line, "") == 0 ){
@@ -206,13 +242,13 @@ void shell_loop(void){
  * Function:  main
  */
 int main(int argc, char ** argv){
-        // Load configuration files
-
+        // Shell initialization
+	getcwd(PWD, sizeof(PWD));	// Initialize PWD Environment Variable
+	strcpy(PATH, PWD);		// Initialize the command PATH
+	strcat(PATH, "/cmds/");		// ^^
 
         // Main loop of the shell
         shell_loop();
 
-        // Shell shutdown and memory cleanup
-
-
+        return 0;
 }
