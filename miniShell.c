@@ -12,7 +12,7 @@
 #include <unistd.h>     // For: chdir(), fork(), exec(), pid_t, getcwd()
 #include <sys/wait.h>	// For: waitpid()
 
-#define BUILTIN_COMMANDS 4	// Number of builtin commands defined
+#define BUILTIN_COMMANDS 5	// Number of builtin commands defined
 
 /*
  * Environment variables
@@ -23,7 +23,7 @@ char PATH[1024];	// Path to find the commands
 /*
  * Built-in command names
  */
-char * builtin[] = {"cd", "exit", "help", "pwd"};
+char * builtin[] = {"cd", "exit", "help", "pwd", "echo"};
 
 /*
  * Built-in command functions
@@ -72,13 +72,14 @@ int shell_help(char ** args){
 	printf("\n\t- exit");
 	printf("\n\t- cd");
 	printf("\n\t- pwd");
+	printf("\n\t- echo");
 	printf("\n\n");
 	return 1;
 }
 
 /*
  * Function:  shell_pwd
- * ---------------------
+ * --------------------
  *  prints the present working directory
  *
  * return: status 1 to indicate successful termination
@@ -88,6 +89,25 @@ int shell_pwd(char ** args){
 	return 1;
 }
 
+/*
+ * Function:  shell_echo
+ * ---------------------
+ *  displays the string provided
+ * 
+ * return: status 1 to indicate successful termination
+ */
+int shell_echo(char ** args){
+	int i = 1;
+	while (1){
+		// End of arguments
+		if (args[i] == NULL){
+			break;
+		}
+		printf("%s ", args[i]);
+		i++;
+	}
+	printf("\n");
+}
 
 /*
  * Array of function pointers to built-in command functions
@@ -96,7 +116,8 @@ int (* builtin_function[]) (char **) = {
 	&shell_cd,
 	&shell_exit,
 	&shell_help,
-	&shell_pwd
+	&shell_pwd,
+	&shell_echo
 };
 
 
