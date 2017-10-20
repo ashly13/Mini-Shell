@@ -1,5 +1,9 @@
 # Mini-Shell
 
+<p align="center">
+  <img width="400" height="150" src="/logo2.png">
+</p>
+
 ## Brief Description
 A simple implementation of the Unix Shell in the C Programming language. This project was coded and tested in Ubuntu 17.04.
 
