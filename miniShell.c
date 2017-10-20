@@ -73,6 +73,7 @@ int shell_help(char ** args){
 	printf("\n\t- cd");
 	printf("\n\t- pwd");
 	printf("\n\t- echo");
+	printf("\n\t- ls");
 	printf("\n\n");
 	return 1;
 }
@@ -201,7 +202,7 @@ int start_process(char ** args){
 		
 		// Execute the required process		
 		if ( execv( cmd_dir, args ) == -1){ // Error
-			printf("minsh: Command not found\n");
+			perror("minsh");
 		}
 		exit(EXIT_FAILURE);	// To exit from child process
         }
