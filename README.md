@@ -31,3 +31,4 @@ When you type a command into minsh, it first looks for the command in the list o
   * `pwd`
   * `echo`
   * `ls`
+  * `cp`
