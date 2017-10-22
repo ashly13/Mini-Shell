@@ -38,3 +38,6 @@ When you type a command into minsh, it first looks for the command in the list o
   * `mkdir`
   * `rmdir`
   * `ln`
+
+### Other facilities
+  * Input, Output and Error Redirection (`<`, `<<`, `>`, `>>`, `2>`, `2>>` respectively)
