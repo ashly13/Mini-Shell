@@ -78,6 +78,7 @@ int shell_help(char ** args){
 	printf("\n\t- mv file1 file2 (or) mv file1 [file2 ...] dir");
 	printf("\n\t- rm file1 [file2 ...]");
 	printf("\n\t- mkdir dir1 [dir2 ...]");
+	printf("\n\t- rmdir dir1 [dir2 ...]");
 	printf("\n\n");
 	return 1;
 }
