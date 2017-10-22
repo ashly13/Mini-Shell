@@ -73,6 +73,7 @@ int shell_help(char ** args){
 	printf("\n\t- cd dir");
 	printf("\n\t- pwd");
 	printf("\n\t- echo [string to echo]");
+	printf("\n\t- clear");
 	printf("\n\t- ls [-a -l] [dir]");
 	printf("\n\t- cp file1 file2 (or) cp file1 [file2 ...] dir");
 	printf("\n\t- mv file1 file2 (or) mv file1 [file2 ...] dir");
