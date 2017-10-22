@@ -11,6 +11,7 @@
 #include <string.h>     // For: strtok(), strcmp(), strcat(), strcpy()
 #include <unistd.h>     // For: chdir(), fork(), exec(), pid_t, getcwd()
 #include <sys/wait.h>	// For: waitpid()
+#include <fcntl.h>	// For: File creation modes
 
 #define BUILTIN_COMMANDS 5	// Number of builtin commands defined
 
@@ -195,6 +196,7 @@ char * read_command_line(void){
  * return: status 1
  */
 int start_process(char ** args){
+
         int status;
         pid_t pid, wpid;
 
@@ -211,6 +213,7 @@ int start_process(char ** args){
 		if ( execv( cmd_dir, args ) == -1){ // Error
 			perror("minsh");
 		}
+
 		exit(EXIT_FAILURE);	// To exit from child process
         }
         else if (pid < 0){      // Error in forking
@@ -221,6 +224,7 @@ int start_process(char ** args){
                         wpid = waitpid(pid, &status, WUNTRACED);
                 } while (!WIFEXITED(status) && !WIFSIGNALED(status));
         }
+
         return 1;
 }
 
@@ -239,17 +243,146 @@ int shell_execute(char ** args){
 		return 1;
 	}
 
+	// Copy the current Standard Input and Output file descriptors
+	// so they can be restored after executing the current command
+	int std_in, std_out, std_err;
+	std_in = dup(0);
+	std_out = dup(1);
+	std_err = dup(2);
+
+	// Check if redirection operators are present
+	int i = 1;
+
+	while ( args[i] != NULL ){
+		if ( strcmp( args[i], "<" ) == 0 ){	// Input redirection
+			int inp = open( args[i+1], O_RDONLY );
+			if ( inp < 0 ){
+				perror("minsh");
+				return 1;
+			}
+
+			if ( dup2(inp, 0) < 0 ){
+				perror("minsh");
+				return 1;
+			}
+			close(inp);
+			args[i] = NULL;
+			args[i+1] = NULL;
+			i += 2;
+		}
+		else if ( strcmp( args[i], "<<" ) == 0 ){	// Input redirection
+			int inp = open( args[i+1], O_RDONLY );
+			if ( inp < 0 ){
+
+				perror("minsh");
+				return 1;
+			}
+
+			if ( dup2(inp, 0) < 0 ){
+				perror("minsh");
+				return 1;
+			}
+			close(inp);
+			args[i] = NULL;
+			args[i+1] = NULL;
+			i += 2;
+		}
+		else if( strcmp( args[i], ">") == 0 ){	// Output redirection
+
+			int out = open( args[i+1], O_WRONLY | O_TRUNC | O_CREAT, 0755 );
+			if ( out < 0 ){
+				perror("minsh");
+				return 1;
+			}
+
+			if ( dup2(out, 1) < 0 ){
+				perror("minsh");
+				return 1;
+			}
+			close(out);
+			args[i] = NULL;
+			args[i+1] = NULL;
+			i += 2;
+		}
+		else if( strcmp( args[i], ">>") == 0 ){	// Output redirection (append)
+			int out = open( args[i+1], O_WRONLY | O_APPEND | O_CREAT, 0755 );
+			if ( out < 0 ){
+				perror("minsh");
+				return 1;
+			}
+
+			if ( dup2(out, 1) < 0 ){
+				perror("minsh");
+				return 1;
+
+			}
+			close(out);
+			args[i] = NULL;
+			args[i+1] = NULL;
+			i += 2;
+		}
+		else if( strcmp( args[i], "2>") == 0 ){	// Error redirection
+			int err = open( args[i+1], O_WRONLY | O_CREAT, 0755 );
+			if ( err < 0 ){
+				perror("minsh");
+				return 1;
+			}
+
+			if ( dup2(err, 2) < 0 ){
+				perror("minsh");
+				return 1;
+			}
+			close(err);
+			args[i] = NULL;
+			args[i+1] = NULL;
+			i += 2;
+		}
+		else if( strcmp( args[i], "2>>") == 0 ){	// Error redirection
+			int err = open( args[i+1], O_WRONLY | O_CREAT | O_APPEND, 0755 );
+
+			if ( err < 0 ){
+				perror("minsh");
+				return 1;
+			}
+
+			if ( dup2(err, 2) < 0 ){
+				perror("minsh");
+				return 1;
+			}
+			close(err);
+			args[i] = NULL;
+			args[i+1] = NULL;
+			i += 2;
+
+		}
+		else{
+			i++;
+		}
+	}
+
 	// If the command is a built-in command, execute that function
-	int i;
 	for(i = 0 ; i < BUILTIN_COMMANDS ; i++){
 		if ( strcmp(args[0], builtin[i]) == 0 ){
-			return (* builtin_function[i])(args);
+			int ret_status = (* builtin_function[i])(args);
+			
+			// Restore the Standard Input and Output file descriptors
+			dup2(std_in, 0);
+			dup2(std_out, 1);
+			dup2(std_err, 2);
+
+			return ret_status;
 		}
 	}
 
 	// For other commands, execute a child process
-	return start_process(args);
+	int ret_status = start_process(args);
 
+	// Restore the Standard Input and Output file descriptors
+	dup2(std_in, 0);
+	dup2(std_out, 1);
+	dup2(std_err, 2);
+
+	return ret_status;
 }
 
 /*
