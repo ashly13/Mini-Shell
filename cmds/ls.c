@@ -66,13 +66,13 @@ int main(int argc, char ** argv){
 	int i = directory;
 	for ( i = directory ; i < argc ; i++ ){
 
-		printf("\n\n%s:\n", argv[i]);
-
 		// Open directory stream
 		if ( (dir = opendir(argv[i])) == NULL ){
-			perror("minsh");
+			fprintf(stderr, "\nminsh: %s - No such file or directory\n\n", argv[i]);
 			return 0;
 		}
+
+		printf("\n\n%s:\n", argv[i]);
 
 		// Read every directory entry and print it
 	

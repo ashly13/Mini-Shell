@@ -83,6 +83,10 @@ int shell_help(char ** args){
 	printf("\n\t- rmdir dir1 [dir2 ...]");
 	printf("\n\t- ln [-s] source target");
 	printf("\n\n");
+	printf("Other facilities : ");
+	printf("\n\t* Input, Output and Error Redirection (<, <<, >, >>, 2>, 2>> respectively)  : ");
+	printf("\n\t* Example: ls -i >> outfile 2> errfile [Space mandatory around redirection operators!]");
+	printf("\n\n");
 	return 1;
 }
 
