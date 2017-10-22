@@ -37,3 +37,4 @@ When you type a command into minsh, it first looks for the command in the list o
   * `rm`
   * `mkdir`
   * `rmdir`
+  * `ln`
